@@ -15,7 +15,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.indigo,
+        inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
+        cardTheme: const CardTheme(elevation: 8),
       ),
       home: const MyHomePage(title: 'Business Card QR Code Generator'),
     );
@@ -34,22 +36,22 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _firstName = TextEditingController();
-  final TextEditingController _lastName = TextEditingController();
-  final TextEditingController _address = TextEditingController();
-  final TextEditingController _houseNumber = TextEditingController();
-  final TextEditingController _postcode = TextEditingController();
-  final TextEditingController _city = TextEditingController();
-  final TextEditingController _country = TextEditingController();
-  final TextEditingController _email = TextEditingController();
-  final TextEditingController _phone = TextEditingController();
+  final TextEditingController _firstName = TextEditingController(text: 'Leif-Arne');
+  final TextEditingController _lastName = TextEditingController(text: 'Rones');
+  final TextEditingController _address = TextEditingController(text: 'Diakonveien');
+  final TextEditingController _houseNumber = TextEditingController(text: '3');
+  final TextEditingController _postcode = TextEditingController(text: '0370');
+  final TextEditingController _city = TextEditingController(text: 'Oslo');
+  final TextEditingController _country = TextEditingController(text: 'Norway');
+  final TextEditingController _email = TextEditingController(text: 'leif.arne.rones@gmail.com');
+  final TextEditingController _phone = TextEditingController(text: '+4792897482');
   final TextEditingController _birthday = TextEditingController();
 
   String _meCard = '';
 
   void _onPressed() {
     if (_formKey.currentState!.validate()) {
-      final vcard = BusinessCard(
+      _meCard = BusinessCard(
         _firstName.text,
         _lastName.text,
         _address.text,
@@ -59,8 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _country.text,
         _email.text,
         _phone.text,
-      );
-      _meCard = vcard.formatVCard();
+      ).formatVCard();
     } else {
       _meCard = '';
     }
@@ -86,31 +87,33 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       Row(
                         children: [
-                          Expanded(flex: 2, child: QField(_firstName, 'First Name', 'Please enter some text')),
+                          Expanded(flex: 2, child: QField(context, _firstName, 'First Name')),
                           const SizedBox(width: 8),
-                          Expanded(flex: 2, child: QField(_lastName, 'Last Name', 'Please enter some text')),
+                          Expanded(flex: 2, child: QField(context, _lastName, 'Last Name')),
                           const SizedBox(width: 8),
-                          Expanded(flex: 4, child: QField(_address, 'Address', 'Please enter some text')),
+                          Expanded(flex: 4, child: QField(context, _address, 'Address')),
                           const SizedBox(width: 8),
-                          Expanded(flex: 1, child: QField(_houseNumber, 'No', 'Please enter some text')),
+                          Expanded(flex: 1, child: QField(context, _houseNumber, 'No')),
                         ],
                       ),
+                      SizedBox(height: 8),
                       Row(
                         children: [
-                          Expanded(child: QField(_postcode, 'Postcode', 'Please enter some text')),
+                          Expanded(child: QField(context, _postcode, 'Postcode')),
                           const SizedBox(width: 8),
-                          Expanded(flex: 3, child: QField(_city, 'City', 'Please enter some text')),
+                          Expanded(flex: 3, child: QField(context, _city, 'City')),
                           const SizedBox(width: 8),
-                          Expanded(flex: 3, child: QField(_country, 'Country', 'Please enter some text')),
+                          Expanded(flex: 3, child: QField(context, _country, 'Country')),
                         ],
                       ),
+                      SizedBox(height: 8),
                       Row(
                         children: [
-                          Expanded(flex: 3, child: QField(_email, 'e-mail', 'Please enter some text')),
+                          Expanded(flex: 3, child: QField(context, _email, 'e-mail')),
                           const SizedBox(width: 8),
-                          Expanded(flex: 2, child: QField(_phone, 'Phone number', 'Please enter some text')),
+                          Expanded(flex: 2, child: QField(context, _phone, 'Phone number')),
                           const SizedBox(width: 8),
-                          Expanded(child: QField(_birthday, 'Birthday', 'Please enter some text')),
+                          Expanded(child: QField(context, _birthday, 'Birthday', validate: false)),
                         ],
                       ),
                     ],
@@ -123,9 +126,29 @@ class _MyHomePageState extends State<MyHomePage> {
                 width: double.infinity,
                 child: Card(
                   child: Center(
-                    child: QrImage(
-                      data: _meCard,
-                      size: 300,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: QrImage(
+                            data: _meCard,
+                            // size: 400,
+                          ),
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black26),
+                            borderRadius: const BorderRadius.all(Radius.circular(4)),
+                          ),
+                          child: SizedBox(
+                            height: 100,
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(8),
+                              child: SelectableText(_meCard),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4)
+                      ],
                     ),
                   ),
                 ),
@@ -144,17 +167,24 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class QField extends TextFormField {
-  QField(TextEditingController controller, String hintText, String errorText, {Key? key})
-      : super(
-            key: key,
-            controller: controller,
-            decoration: InputDecoration(hintText: hintText),
-            validator: (String? value) {
-              if (value == null || value.isEmpty) {
-                return errorText;
-              }
-              return null;
-            });
+  QField(
+    BuildContext context,
+    TextEditingController controller,
+    String labelText, {
+    Key? key,
+    String errorText = 'Please, enter some text',
+    bool validate = true,
+  }) : super(
+          key: key,
+          controller: controller,
+          decoration: InputDecoration(labelText: labelText).applyDefaults(Theme.of(context).inputDecorationTheme),
+          validator: (String? value) {
+            if (validate && (value == null || value.isEmpty)) {
+              return errorText;
+            }
+            return null;
+          },
+        );
 }
 
 class BusinessCard {
